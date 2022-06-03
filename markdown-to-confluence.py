@@ -131,6 +131,13 @@ def parse_args():
         help="The front matter property to use for the confluence title.",
         default="title",
     )
+    parser.add_argument(
+        "--index",
+        type=str,
+        dest="index",
+        help="The index page filename.",
+        default="README.md"
+    )
 
     args = parser.parse_args()
 
@@ -402,7 +409,7 @@ def main():
                         dirs[:] = [d for d in dirs if not d[0] == "."]
                         for f in files:
                             absolute_path = os.path.join(root, f)
-                            if f == "README.md":
+                            if f == args.index:
                                 dir_path = os.path.dirname(absolute_path)
                                 articles.append(
                                     Article(

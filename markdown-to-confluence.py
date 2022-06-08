@@ -354,7 +354,7 @@ class MarkdownToConfluence:
                         break
                     except Exception as ex:
                         log.error(
-                            f"Failed to sync: '{article.title}, because of Exception: {ex}'"
+                            f"Failed to sync: '{articleToSync.title}, because of Exception: {ex}'"
                         )
                         tries += 1
                         if tries < 3:

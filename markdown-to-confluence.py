@@ -136,9 +136,14 @@ def parse_args():
         type=str,
         dest="index",
         help="The index page filename.",
-        default="README.md"
+        default="README.md",
     )
-
+    parser.add_argument(
+        "--pandoc",
+        dest="pandoc",
+        action="store_true",
+        help="Will use pandoc (pypandoc) to convert the files.",
+    )
     args = parser.parse_args()
 
     global TITLE_KEY
@@ -177,7 +182,7 @@ class ArticleToSync:
 
     @property
     def title(self) -> str:
-        return self.front_matter[TITLE_KEY]
+        return self.front_matter.get(TITLE_KEY, "Title not found: {article_name}".format(article_name=self.article.name))
 
 
 class MarkdownToConfluence:
@@ -188,12 +193,14 @@ class MarkdownToConfluence:
         ancestor_id: str,
         space: str,
         global_label: Optional[str],
+        use_pandoc: Optional[bool],
     ) -> None:
         self.confluence = confluence
         self.articles = articles
         self.ancestor_id = ancestor_id
         self.space = space
         self.global_label = global_label
+        self.use_pandoc = use_pandoc
 
     def _get_placement(self, article_to_sync: ArticleToSync) -> Tuple[str, str]:
         space, ancestor_id = article_to_sync.self_placement
@@ -251,14 +258,50 @@ class MarkdownToConfluence:
             author_keys.append(confluence_author["userKey"])
         articleToSync.author_keys = author_keys
 
+    def _convert_pandoc(self, markdown: str):
+        # TODO: Finish this function.
+        import pypandoc
+
+        results = pypandoc.convert_text(markdown, "jira", format="md")
+        results.replace(
+            "[[_TOC_]]",
+            "{toc:printable=true|style=square|maxLevel=2|indent=5px|minLevel=2|class=bigpink|exclude=[1//2]|type=list|outline=true|include=.*}",
+        )
+        return results
+
+    def _find_links(self, markdown: str, directory: str):
+        import os
+        import re
+        from urllib.parse import urlparse
+
+        results = set()
+        pat = re.compile(
+            r"!\[(?P<link_text>.+?)\]\((?P<link>[^\" ]+?)(?P<alt_text> \".+?\")?\)"
+        )
+        matches = pat.findall(markdown)
+        for match in matches:
+            src = match[1]
+            is_external = bool(urlparse(src).netloc)
+            if is_external:
+                continue
+            image_path = os.path.normpath(os.path.join(directory, src))
+            results.add(image_path)
+        return list(results)
+
     def _convert_to_confluence(self, articleToSync: ArticleToSync):
         renderer = ConfluenceRenderer(
             authors=articleToSync.author_keys, article=articleToSync.article
         )
-        content_html = mistune.markdown(articleToSync.markdown, renderer=renderer)
-        page_html = renderer.layout(content_html)
-
-        return page_html, renderer.attachments
+        if self.use_pandoc:
+            content_html = self._convert_pandoc(articleToSync.markdown)
+            attachments = self._find_links(
+                articleToSync.markdown, articleToSync.article.absolute_director
+            )
+            return content_html, attachments
+        else:
+            content_html = mistune.markdown(articleToSync.markdown, renderer=renderer)
+            page_html = renderer.layout(content_html)
+            return page_html, renderer.attachments
 
     def _ensure_exists(self, article_to_sync: ArticleToSync):
         space, ancestor_id = self._get_placement(article_to_sync)
@@ -283,7 +326,7 @@ class MarkdownToConfluence:
             page = self.confluence.create(
                 id_label=article_to_sync.article.id_label,
                 space=space,
-                title=article_to_sync.article.name or "Title missing",
+                title=article_to_sync.title or "Title missing",
                 ancestor_id=ancestor_id,
             )
         else:
@@ -467,6 +510,7 @@ def main():
         ancestor_id=args.ancestor_id,
         space=args.space,
         global_label=args.global_label,
+        use_pandoc=args.pandoc,
     ).sync()
 
 

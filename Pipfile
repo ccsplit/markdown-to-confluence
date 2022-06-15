@@ -16,6 +16,7 @@ urllib3 = "==1.25.7"
 yapf = "==0.28.0"
 GitPython = "==3.0.4"
 PyYAML = "==5.1.2"
+pypandoc = "*"
 
 [dev-packages]
 

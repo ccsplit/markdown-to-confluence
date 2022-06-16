@@ -1,10 +1,11 @@
 import logging
 import json
 from typing import List, Optional
+import re
 import requests
 import os
 
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 API_HEADERS = {
     "User-Agent": "markdown-to-confluence",
@@ -227,7 +228,13 @@ class Confluence:
         if use_pandoc:
             resp = self.post(path="contentbody/convert/storage", data={"value": content, "representation": "wiki"})
             if "value" in resp:
+                pat = re.compile('ri:attachment.*?ri:filename="(?P<filename>[^"])"')
                 converted_content = resp["value"]
+                matches = pat.findall(converted_content)
+                if matches:
+                    for match in matches:
+                        if not bool(urlparse(match).netloc):
+                            converted_content.replace(match, os.path.basename(os.path.normpath(match)))
                 result =  {
                     "type": type,
                     "title": title,

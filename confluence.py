@@ -222,24 +222,41 @@ class Confluence:
         return labels
 
     def _create_page_payload(
-        self, content=None, title=None, ancestor_id=None, space=None, type="page", use_pandoc=False
+        self,
+        content=None,
+        title=None,
+        ancestor_id=None,
+        space=None,
+        type="page",
+        use_pandoc=False,
     ):
         result = {}
         if use_pandoc:
-            resp = self.post(path="contentbody/convert/storage", data={"value": content, "representation": "wiki"})
+            resp = self.post(
+                path="contentbody/convert/storage",
+                data={"value": content, "representation": "wiki"},
+            )
             if "value" in resp:
-                pat = re.compile('ri:attachment.*?ri:filename="(?P<filename>[^"])"')
+                pat = re.compile(r"ri:filename=\"(?P<filename>[^\"]+)\"")
                 converted_content = resp["value"]
                 matches = pat.findall(converted_content)
+                log.debug("Found filenames: {}".format(matches))
                 if matches:
                     for match in matches:
                         if not bool(urlparse(match).netloc):
-                            converted_content.replace(match, os.path.basename(os.path.normpath(match)))
-                result =  {
+                            converted_content.replace(
+                                match, os.path.basename(os.path.normpath(match))
+                            )
+                result = {
                     "type": type,
                     "title": title,
                     "space": {"key": space},
-                    "body": {"storage": {"representation": "storage", "value": converted_content}},
+                    "body": {
+                        "storage": {
+                            "representation": "storage",
+                            "value": converted_content,
+                        }
+                    },
                     "ancestors": [{"id": str(ancestor_id)}],
                 }
         if not result:
@@ -306,7 +323,7 @@ class Confluence:
         title: str,
         ancestor_id: str,
         type: str = "page",
-        use_pandoc = False
+        use_pandoc=False,
     ) -> str:
         """Creates a new page with the provided content.
 
@@ -329,7 +346,7 @@ class Confluence:
             ancestor_id=ancestor_id,
             space=space,
             type=type,
-            use_pandoc=use_pandoc
+            use_pandoc=use_pandoc,
         )
         response = self.post(path="content/", data=page)
         log.info("Create response: {}".format(response))
@@ -367,7 +384,7 @@ class Confluence:
         tags: Optional[List[str]] = None,
         attachments: Optional[List[str]] = None,
         type="page",
-        use_pandoc = False
+        use_pandoc=False,
     ):
 
         # Since the page already has an ID in Confluence, before updating our
@@ -386,7 +403,7 @@ class Confluence:
             ancestor_id=ancestor_id,
             space=space,
             type=type,
-            use_pandoc=use_pandoc
+            use_pandoc=use_pandoc,
         )
         # Increment the version number, as required by the Confluence API
         # https://docs.atlassian.com/ConfluenceServer/rest/7.1.0/#api/content-update

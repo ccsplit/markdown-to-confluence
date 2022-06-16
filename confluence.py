@@ -221,15 +221,30 @@ class Confluence:
         return labels
 
     def _create_page_payload(
-        self, content=None, title=None, ancestor_id=None, space=None, type="page"
+        self, content=None, title=None, ancestor_id=None, space=None, type="page", use_pandoc=False
     ):
-        return {
-            "type": type,
-            "title": title,
-            "space": {"key": space},
-            "body": {"storage": {"representation": "storage", "value": content}},
-            "ancestors": [{"id": str(ancestor_id)}],
-        }
+        result = {}
+        if use_pandoc:
+            resp = self.post(path="contentbody/convert/storage", data={"value": content, "representation": "wiki"})
+            if "value" in resp:
+                converted_content = resp["value"]
+                result =  {
+                    "type": type,
+                    "title": title,
+                    "space": {"key": space},
+                    "body": {"storage": {"representation": "storage", "value": converted_content}},
+                    "ancestors": [{"id": str(ancestor_id)}],
+                }
+        if not result:
+            result = {
+                "type": type,
+                "title": title,
+                "space": {"key": space},
+                "body": {"storage": {"representation": "storage", "value": content}},
+                "ancestors": [{"id": str(ancestor_id)}],
+            }
+
+        return result
 
     def get_attachments(self, post_id):
         """Gets the attachments for a particular Confluence post
@@ -284,6 +299,7 @@ class Confluence:
         title: str,
         ancestor_id: str,
         type: str = "page",
+        use_pandoc = False
     ) -> str:
         """Creates a new page with the provided content.
 
@@ -306,6 +322,7 @@ class Confluence:
             ancestor_id=ancestor_id,
             space=space,
             type=type,
+            use_pandoc=use_pandoc
         )
         response = self.post(path="content/", data=page)
         log.info("Create response: {}".format(response))
@@ -343,6 +360,7 @@ class Confluence:
         tags: Optional[List[str]] = None,
         attachments: Optional[List[str]] = None,
         type="page",
+        use_pandoc = False
     ):
 
         # Since the page already has an ID in Confluence, before updating our
@@ -361,6 +379,7 @@ class Confluence:
             ancestor_id=ancestor_id,
             space=space,
             type=type,
+            use_pandoc=use_pandoc
         )
         # Increment the version number, as required by the Confluence API
         # https://docs.atlassian.com/ConfluenceServer/rest/7.1.0/#api/content-update

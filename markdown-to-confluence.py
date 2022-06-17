@@ -265,11 +265,11 @@ class MarkdownToConfluence:
         # TODO: Finish this function.
         import pypandoc
 
-        results = pypandoc.convert_text(markdown, "jira", format="gfm")
-        results.replace(
+        markdown = markdown.replace(
             "[[_TOC_]]",
-            "{to:printable=true|style=square|maxLevel=2|indent=5px|minLevel=2|class=bigpink|exclude=[1//2]|type=list|outline=true|include=.*}",
+            "{toc:printable=true|style=square|maxLevel=2|indent=5px|minLevel=2|class=bigpink|exclude=[1//2]|type=list|outline=true|include=.*}",
         )
+        results = pypandoc.convert_text(markdown, "jira", format="gfm")
         return results
 
     def _find_links(self, markdown: str, directory: str):

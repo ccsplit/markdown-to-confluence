@@ -1,3 +1,4 @@
+from bs4 import BeautifulSoup
 import logging
 import json
 from typing import List, Optional
@@ -237,16 +238,15 @@ class Confluence:
                 data={"value": content, "representation": "wiki"},
             )
             if "value" in resp:
-                pat = re.compile(r"ri:filename=\"(?P<filename>[^\"]+)\"")
                 converted_content = resp["value"]
-                matches = pat.findall(converted_content)
-                log.debug("Found filenames: {}".format(matches))
-                if matches:
-                    for match in matches:
-                        if not bool(urlparse(match).netloc):
-                            converted_content.replace(
-                                match, os.path.basename(os.path.normpath(match))
-                            )
+                soup = BeautifulSoup(converted_content, "html.parser")
+                attachments = soup.findAll("ri:attachment")
+                for attachment in attachments:
+                    src = attachment.get("ri:filename").replace('\\"', "")
+                    if not bool(urlparse(src).netloc):
+                        attachment["ri:filename"] = '\\"{}\\"'.format(
+                            os.path.basename(src)
+                        )
                 result = {
                     "type": type,
                     "title": title,
@@ -254,7 +254,7 @@ class Confluence:
                     "body": {
                         "storage": {
                             "representation": "storage",
-                            "value": converted_content,
+                            "value": str(soup),
                         }
                     },
                     "ancestors": [{"id": str(ancestor_id)}],

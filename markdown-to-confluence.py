@@ -182,7 +182,10 @@ class ArticleToSync:
 
     @property
     def title(self) -> str:
-        return self.front_matter.get(TITLE_KEY, "Title not found: {article_name}".format(article_name=self.article.name))
+        return self.front_matter.get(
+            TITLE_KEY,
+            "Title not found: {article_name}".format(article_name=self.article.name),
+        )
 
 
 class MarkdownToConfluence:
@@ -265,7 +268,7 @@ class MarkdownToConfluence:
         results = pypandoc.convert_text(markdown, "jira", format="gfm")
         results.replace(
             "[[_TOC_]]",
-            "{toc:printable=true|style=square|maxLevel=2|indent=5px|minLevel=2|class=bigpink|exclude=[1//2]|type=list|outline=true|include=.*}",
+            "{to:printable=true|style=square|maxLevel=2|indent=5px|minLevel=2|class=bigpink|exclude=[1//2]|type=list|outline=true|include=.*}",
         )
         return results
 
@@ -328,7 +331,7 @@ class MarkdownToConfluence:
                 space=space,
                 title=article_to_sync.title or "Title missing",
                 ancestor_id=ancestor_id,
-                use_pandoc=self.use_pandoc
+                use_pandoc=self.use_pandoc,
             )
         else:
             log.info("{} Page exists".format(article_to_sync))
@@ -392,7 +395,7 @@ class MarkdownToConfluence:
                             ancestor_id=article.ancestor_id,
                             page_version=article.page_version,
                             attachments=attachments,
-                            use_pandoc=self.use_pandoc
+                            use_pandoc=self.use_pandoc,
                         )
 
                         article.state = ArticleState.SYNCED

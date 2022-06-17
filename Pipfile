@@ -17,6 +17,7 @@ yapf = "==0.28.0"
 GitPython = "==3.0.4"
 PyYAML = "==5.1.2"
 pypandoc = "*"
+bs4 = "*"
 
 [dev-packages]
 

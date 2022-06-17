@@ -265,10 +265,6 @@ class MarkdownToConfluence:
         # TODO: Finish this function.
         import pypandoc
 
-        markdown = markdown.replace(
-            "[[_TOC_]]",
-            "{toc:printable=true|style=square|maxLevel=2|indent=5px|minLevel=2|class=bigpink|exclude=[1//2]|type=list|outline=true|include=.*}",
-        )
         results = pypandoc.convert_text(markdown, "jira", format="gfm")
         return results
 

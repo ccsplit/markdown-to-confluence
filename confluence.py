@@ -239,6 +239,13 @@ class Confluence:
             )
             if "value" in resp:
                 converted_content = resp["value"]
+                converted_content = converted_content.replace(
+                    "[[_TOC_]]",
+                    '<p><ac:structured-macro ac:name="toc" ac:schema-version="1"><ac:parameter ac:name="exclude">^(Authors|Table of Contents)$</ac:parameter></ac:structured-macro></p>',
+                ).replace(
+                    "[[TOC]]",
+                    '<p><ac:structured-macro ac:name="toc" ac:schema-version="1"><ac:parameter ac:name="exclude">^(Authors|Table of Contents)$</ac:parameter></ac:structured-macro></p>',
+                )
                 soup = BeautifulSoup(converted_content, "html.parser")
                 attachments = soup.findAll("ri:attachment")
                 for attachment in attachments:
